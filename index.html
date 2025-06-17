@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>jzux mediateur </title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jeu du Médiateur - Score & situations multiples</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .dialogue {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 5px #ccc;
+    }
+    .person-a { color: #d9534f; }
+    .person-b { color: #0275d8; }
+    .mediator { color: #5cb85c; }
+    .situation-select {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      border: none;
+      background: #0275d8;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      max-width: 100%;
+    }
+    button:hover {
+      background: #025aa5;
+    }
+    .hidden {
+      display: none;
+    }
+    .result {
+      background: #dff0d8;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+      color: #3c763d;
+    }
+    .result.fail {
+      background: #f2dede;
+      color: #a94442;
+    }
+    #score {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎯 Jeu du Médiateur - Score & Multiples Situations</h1>
+
+  <div class="situation-select" id="situation-select">
+    <h2>Choisis une situation à résoudre :</h2>
+  </div>
+
+  <div id="game" class="hidden">
+    <div id="score">Score: 0</div>
+    <div class="dialogue person-a" id="a-text"></div>
+    <div class="dialogue person-b" id="b-text" style="display:none;"></div>
+    <div class="dialogue mediator" id="mediator-text" style="display:none;"></div>
+    <div id="choices"></div>
+    <div id="result" class="result hidden"></div>
+  </div>
+
+  <script>
+    const scenarios = [
+      {
+        title: "🚌 Conflit dans le bus scolaire",
+        a: "Personne A : Il m'a pris ma place dans le bus sans demander !",
+        b: "Personne B : C’est faux, je ne savais pas que c’était réservé.",
+        steps: [
+          {
+            mediator: "Que proposes-tu comme première action ?",
+            choices: [
+              { text: "Écouter calmement Personne B", correct: true, next: 1 },
+              { text: "Prendre le parti de Personne A sans écouter", correct: false, next: null },
+              { text: "Ignorer le problème", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment encourager la communication ?",
+            choices: [
+              { text: "Demander à chacun d’expliquer son ressenti", correct: true, next: 2 },
+              { text: "Dire à Personne A de se calmer", correct: false, next: null },
+              { text: "Faire une blague pour détendre l’atmosphère", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution proposer pour régler le conflit ?",
+            choices: [
+              { text: "Proposer à Personne B de s'excuser et trouver une autre place", correct: true, next: null },
+              { text: "Dire à Personne A de se défendre seul", correct: false, next: null },
+              { text: "Ignorer le problème", correct: false, next: null }
+            ]
+          }
+        ]
+      },
+      {
+        title: "🎮 Dispute à propos d’un jeu vidéo",
+        a: "Personne A : Il a éteint la console pendant que je jouais !",
+        b: "Personne B : Tu jouais depuis une heure, je voulais aussi jouer.",
+        steps: [
+          {
+            mediator: "Quelle est ta première réaction ?",
+            choices: [
+              { text: "Écouter Personne B pour comprendre", correct: true, next: 1 },
+              { text: "Dire à Personne A qu’il exagère", correct: false, next: null },
+              { text: "Ignorer le conflit", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment aider les deux à communiquer ?",
+            choices: [
+              { text: "Proposer un tour à chacun sur la console", correct: true, next: 2 },
+              { text: "Dire à Personne B de se calmer", correct: false, next: null },
+              { text: "Prendre parti pour Personne B", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution finale proposer ?",
+            choices: [
+              { text: "Établir un temps de jeu équitable", correct: true, next: null },
+              { text: "Dire à Personne A d’arrêter de jouer", correct: false, next: null },
+              { text: "Laisser le conflit sans solution", correct: false, next: null }
+            ]
+          }
+        ]
+      },
+      {
+        title: "📚 Travail en groupe mal réparti",
+        a: "Personne A : Je fais tout le travail, il ne fait rien dans notre projet !",
+        b: "Personne B : Ce n’est pas vrai, je fais ma part mais à mon rythme.",
+        steps: [
+          {
+            mediator: "Que fais-tu en premier ?",
+            choices: [
+              { text: "Écouter les deux attentivement", correct: true, next: 1 },
+              { text: "Dire à Personne B de se dépêcher", correct: false, next: null },
+              { text: "Dire à Personne A d’être patient", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment encourager le dialogue ?",
+            choices: [
+              { text: "Proposer une réunion pour répartir les tâches", correct: true, next: 2 },
+              { text: "Dire à Personne A de faire tout le travail", correct: false, next: null },
+              { text: "Ignorer la plainte de Personne A", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution proposez-vous ?",
+            choices: [
+              { text: "Répartir clairement les tâches et les échéances", correct: true, next: null },
+              { text: "Laisser Personne B travailler à son rythme", correct: false, next: null },
+              { text: "Annuler le projet", correct: false, next: null }
+            ]
+          }
+        ]
+      },
+      {
+        title: "💼 Conflit au travail sur une tâche",
+        a: "Personne A : Tu n’as pas respecté la deadline, ça complique tout.",
+        b: "Personne B : J’ai eu des imprévus, mais je travaille dessus.",
+        steps: [
+          {
+            mediator: "Quelle est ta première réaction ?",
+            choices: [
+              { text: "Écouter les deux parties calmement", correct: true, next: 1 },
+              { text: "Blâmer directement Personne B", correct: false, next: null },
+              { text: "Ignorer le problème", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment encourager la résolution ?",
+            choices: [
+              { text: "Proposer un nouveau planning ensemble", correct: true, next: 2 },
+              { text: "Dire à Personne A de faire preuve de patience", correct: false, next: null },
+              { text: "Forcer Personne B à finir seul", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution finale proposer ?",
+            choices: [
+              { text: "Mettre en place un suivi régulier", correct: true, next: null },
+              { text: "Laisser Personne B gérer seul", correct: false, next: null },
+              { text: "Renvoyer Personne B", correct: false, next: null }
+            ]
+          }
+        ]
+      },
+      {
+        title: "🏠 Conflit familial",
+        a: "Personne A : Tu ne respectes jamais mes affaires.",
+        b: "Personne B : Ce n’est pas vrai, je fais attention.",
+        steps: [
+          {
+            mediator: "Que fais-tu en premier ?",
+            choices: [
+              { text: "Écouter les deux calmement", correct: true, next: 1 },
+              { text: "Dire à Personne A qu’il exagère", correct: false, next: null },
+              { text: "Ignorer le conflit", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment favoriser la discussion ?",
+            choices: [
+              { text: "Demander à chacun d’expliquer ce qui le dérange", correct: true, next: 2 },
+              { text: "Dire à Personne B de s'excuser tout de suite", correct: false, next: null },
+              { text: "Rire du problème", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution suggères-tu ?",
+            choices: [
+              { text: "Proposer un rangement commun des affaires", correct: true, next: null },
+              { text: "Dire à Personne A de tout garder pour lui", correct: false, next: null },
+              { text: "Ignorer le problème", correct: false, next: null }
+            ]
+          }
+        ]
+      },
+      {
+        title: "🏫 Problème entre camarades à l'école",
+        a: "Personne A : Il m’a insulté devant tout le monde.",
+        b: "Personne B : Ce n’était pas une insulte, juste une blague.",
+        steps: [
+          {
+            mediator: "Quelle est ta première action ?",
+            choices: [
+              { text: "Écouter Personne A et B calmement", correct: true, next: 1 },
+              { text: "Dire à Personne A de ne pas être susceptible", correct: false, next: null },
+              { text: "Ignorer la situation", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Comment résoudre le malentendu ?",
+            choices: [
+              { text: "Demander à Personne B d’expliquer ses intentions", correct: true, next: 2 },
+              { text: "Dire à Personne B de s'excuser immédiatement", correct: false, next: null },
+              { text: "Blâmer Personne A", correct: false, next: null }
+            ]
+          },
+          {
+            mediator: "Quelle solution proposer ?",
+            choices: [
+              { text: "Encourager une discussion respectueuse", correct: true, next: null },
+              { text: "Punir Personne B sans discussion", correct: false, next: null },
+              { text: "Ignorer le conflit", correct: false, next: null }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const situationSelectDiv = document.getElementById("situation-select");
+    const gameDiv = document.getElementById("game");
+    const aText = document.getElementById("a-text");
+    const bText = document.getElementById("b-text");
+    const mediatorText = document.getElementById("mediator-text");
+    const choicesDiv = document.getElementById("choices");
+    const resultDiv = document.getElementById("result");
+    const scoreDiv = document.getElementById("score");
+
+    let currentScenario = null;
+    let currentStep = 0;
+    let score = 0;
+
+    // Afficher les boutons de situations
+    function displaySituationButtons() {
+      scenarios.forEach((scenario, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = scenario.title;
+        btn.addEventListener("click", () => {
+          startGame(i);
+        });
+        situationSelectDiv.appendChild(btn);
+      });
+    }
+
+    function startGame(index) {
+      currentScenario = scenarios[index];
+      currentStep = 0;
+      score = 0;
+      scoreDiv.textContent = "Score: 0";
+      situationSelectDiv.classList.add("hidden");
+      gameDiv.classList.remove("hidden");
+      bText.style.display = "block";
+      mediatorText.style.display = "block";
+      aText.textContent = currentScenario.a;
+      bText.textContent = currentScenario.b;
+      resultDiv.classList.add("hidden");
+      showStep();
+    }
+
+    function showStep() {
+      const step = currentScenario.steps[currentStep];
+      mediatorText.textContent = step.mediator;
+      choicesDiv.innerHTML = "";
+      resultDiv.classList.add("hidden");
+
+      step.choices.forEach((choice, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = choice.text;
+        btn.addEventListener("click", () => {
+          if(choice.correct){
+            score++;
+            scoreDiv.textContent = "Score: " + score;
+            resultDiv.textContent = "Bonne réponse ! 🎉";
+            resultDiv.classList.remove("hidden");
+            resultDiv.classList.remove("fail");
+            if(choice.next !== null){
+              currentStep = choice.next;
+              setTimeout(showStep, 1000);
+            } else {
+              // Fin scénario
+              setTimeout(endScenario, 1000);
+            }
+          } else {
+            resultDiv.textContent = "Mauvaise réponse. ❌ Essaie encore.";
+            resultDiv.classList.remove("hidden");
+            resultDiv.classList.add("fail");
+          }
+        });
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    function endScenario() {
+      resultDiv.textContent = `Fin de la situation. Ton score: ${score} / ${currentScenario.steps.length}`;
+      resultDiv.classList.remove("fail");
+      choicesDiv.innerHTML = "";
+      mediatorText.textContent = "";
+      bText.style.display = "none";
+      aText.textContent = "";
+      // Bouton pour revenir au menu
+      const btnBack = document.createElement("button");
+      btnBack.textContent = "Retour au menu";
+      btnBack.addEventListener("click", () => {
+        resetGame();
+      });
+      choicesDiv.appendChild(btnBack);
+    }
+
+    function resetGame() {
+      gameDiv.classList.add("hidden");
+      situationSelectDiv.classList.remove("hidden");
+      resultDiv.classList.add("hidden");
+      score = 0;
+      scoreDiv.textContent = "Score: 0";
+      choicesDiv.innerHTML = "";
+      aText.textContent = "";
+      bText.style.display = "none";
+      mediatorText.style.display = "none";
+    }
+
+    // Initialisation
+    displaySituationButtons();
+  </script>
+
+</body>
+</html>
+<!-- partial -->
+  
+</body>
+</html>
